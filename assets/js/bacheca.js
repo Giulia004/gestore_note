@@ -8,9 +8,6 @@
     document.addEventListener('DOMContentLoaded', init);
 
     function init() {
-        var btnAggiungi = document.getElementById('nota-aggiungi-btn');
-        if (btnAggiungi) btnAggiungi.addEventListener('click', aggiungiNota);
-
         var selectCategoria = document.getElementById('nota-nuova-categoria');
         if (selectCategoria) {
             selectCategoria.addEventListener('change', aggiornaUtentiPerCategoria);
@@ -234,53 +231,6 @@
         nodo.addEventListener('dragend', function () { nodo.classList.remove('card-nota-dragging'); });
 
         return nodo;
-    }
-
-    function aggiungiNota() {
-        var input = document.getElementById('nota-nuovo-titolo');
-        if (!input) return;
-        var titolo = input.value.trim();
-        if (!titolo) return;
-
-        var fileInput = document.getElementById('nota-nuovo-allegato');
-        var fileToUpload = fileInput && fileInput.files.length > 0 ? fileInput.files[0] : null;
-        var tagSelezionato = document.getElementById('nota-nuovo-tag') ? document.getElementById('nota-nuovo-tag').value : '';
-        var categoriaSelezionata = document.getElementById('nota-nuova-categoria') ? document.getElementById('nota-nuova-categoria').value : '';
-
-        var payload = {
-            titolo: titolo,
-            priorita: document.getElementById('nota-nuova-priorita') ? document.getElementById('nota-nuova-priorita').value : 'media',
-            scadenza: document.getElementById('nota-nuova-scadenza') ? document.getElementById('nota-nuova-scadenza').value : '',
-            assegnato_a: document.getElementById('nota-nuovo-assegnato') ? document.getElementById('nota-nuovo-assegnato').value : '',
-            tag_nota: tagSelezionato ? [parseInt(tagSelezionato, 10)] : [],
-            categoria_nota: categoriaSelezionata ? [parseInt(categoriaSelezionata, 10)] : []
-        };
-
-        window.GN_API.fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-        }).then(function (nota) {
-            if (fileToUpload && nota.id) {
-                var formData = new FormData();
-                formData.append('file', fileToUpload);
-                return fetch(API_URL + '/' + nota.id + '/allegato', {
-                    method: 'POST',
-                    headers: { 'X-WP-Nonce': GN_Data.nonce },
-                    body: formData
-                }).then(function (res) {
-                    if (!res.ok) throw new Error("Errore nel caricamento allegato");
-                    return res.json();
-                }).then(function (resAllegato) {
-                    nota.allegato_url = resAllegato.url;
-                    return nota;
-                });
-            }
-            return nota;
-        }).then(function (notaFinale) {
-            window.noteCache.unshift(notaFinale);
-            disegnaBoard();
-            input.value = '';
-        }).catch(function (err) { alert(err.message); });
     }
 
     function eliminaNota(id) {

@@ -13,6 +13,7 @@ require_once plugin_dir_path(__FILE__) . 'includes/class-post-type.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-admin-bacheca.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-rest-api.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-dashboard-widget.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-chat-live.php';
 
 class Gestore_Note_Plugin
 {
@@ -32,6 +33,7 @@ class Gestore_Note_Plugin
         Gestore_Note_Bacheca::get_instance();
         Gestore_Note_Rest_Api::get_instance();
         Gestore_Note_Dashboard_Widget::get_instance();
+        Gestore_Note_Chat_Live::get_instance();
     }
 
 }

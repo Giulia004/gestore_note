@@ -54,7 +54,10 @@ class Gestore_Note_Post_Type
                 'menu_name' => 'Etichette',
             ],
             'hierarchical' => true,
-            'show_ui' => true,
+            'show_ui' => false,
+            'show_in_menu' => false,
+            'show_in_nav_menus' => false,
+            'meta_box_cb' => false,
             'show_in_rest' => true,
             'show_admin_column' => true,
         ]);
@@ -75,7 +78,10 @@ class Gestore_Note_Post_Type
                 'menu_name' => 'Categorie',
             ],
             'hierarchical' => true,
-            'show_ui' => true,
+            'show_ui' => false,
+            'show_in_menu' => false,
+            'show_in_nav_menus' => false,
+            'meta_box_cb' => false,
             'show_in_rest' => true,
             'show_admin_column' => true,
         ]);

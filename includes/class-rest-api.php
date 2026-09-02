@@ -55,14 +55,27 @@ class Gestore_Note_Rest_Api
 
         //Endpoint per il recupero delle etichette (tag)
         register_rest_route(self::NS, '/tag', [
-            'methods' => 'GET',
-            'callback' => [$this, 'get_tag'],
-            'permission_callback' => [$this, 'controllo_permessi']
+            [
+                'methods' => 'GET',
+                'callback' => [$this, 'get_tag'],
+                'permission_callback' => [$this, 'controllo_permessi']
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [$this, 'crea_tag'],
+                'permission_callback' => [$this, 'controllo_permessi']
+            ]
         ]);
 
         register_rest_route(self::NS, '/categoria', [
             'methods' => 'POST',
             'callback' => [$this, 'crea_categoria'],
+            'permission_callback' => [$this, 'controllo_permessi']
+        ]);
+
+        register_rest_route(self::NS, '/categoria/(?P<id>\d+)', [
+            'methods' => 'PUT',
+            'callback' => [$this, 'aggiorna_categoria'],
             'permission_callback' => [$this, 'controllo_permessi']
         ]);
 
@@ -178,16 +191,100 @@ class Gestore_Note_Rest_Api
         }
 
         $term = term_exists($nome, 'categoria_nota');
+        $term_id = null;
+
         if ($term) {
             $term_id = is_array($term) ? $term['term_id'] : $term;
             $term_obj = get_term($term_id, 'categoria_nota');
+        } else {
+            $inserita = wp_insert_term($nome, 'categoria_nota');
+            if (is_wp_error($inserita)) {
+                return $inserita;
+            }
+            $term_id = $inserita['term_id'];
+        }
+
+        $utenti = array_map('absint', (array) $request->get_param('utenti'));
+        $utenti = array_values(array_unique(array_filter($utenti, function ($id) {
+            return $id > 0;
+        })));
+
+        if (!empty($utenti)) {
+            update_term_meta($term_id, '_categoria_utenti', $utenti);
+        } else {
+            delete_term_meta($term_id, '_categoria_utenti');
+        }
+
+        $term_obj = get_term($term_id, 'categoria_nota');
+        return rest_ensure_response([
+            'id' => $term_id,
+            'name' => $term_obj ? $term_obj->name : $nome,
+            'utenti' => $utenti,
+        ]);
+    }
+
+    public function aggiorna_categoria($request)
+    {
+        $term_id = absint($request['id']);
+        $nome = trim(sanitize_text_field($request->get_param('nome')));
+
+        if (!$term_id || !term_exists($term_id, 'categoria_nota')) {
+            return new WP_Error('categoria_non_trovata', 'Categoria non trovata.', ['status' => 404]);
+        }
+
+        if (empty($nome)) {
+            return new WP_Error('categoria_vuota', 'Il nome della categoria è obbligatorio.', ['status' => 400]);
+        }
+
+        $term = wp_update_term($term_id, 'categoria_nota', [
+            'name' => $nome,
+        ]);
+
+        if (is_wp_error($term)) {
+            return $term;
+        }
+
+        $utenti = array_map('absint', (array) $request->get_param('utenti'));
+        $utenti = array_values(array_unique(array_filter($utenti, function ($id) {
+            return $id > 0;
+        })));
+
+        if (!empty($utenti)) {
+            update_term_meta($term_id, '_categoria_utenti', $utenti);
+        } else {
+            delete_term_meta($term_id, '_categoria_utenti');
+        }
+
+        return rest_ensure_response([
+            'id' => $term_id,
+            'name' => $nome,
+            'utenti' => $utenti,
+        ]);
+    }
+
+    public function crea_tag($request)
+    {
+        $nome = trim(sanitize_text_field($request->get_param('nome')));
+
+        if (empty($nome)) {
+            return new WP_Error('tag_vuoto', 'Il nome dell\'etichetta è obbligatorio.', ['status' => 400]);
+        }
+
+        if (!taxonomy_exists('tag_nota')) {
+            return new WP_Error('tag_non_registrata', 'La tassonomia etichetta non è registrata.', ['status' => 500]);
+        }
+
+        $term = term_exists($nome, 'tag_nota');
+        if ($term) {
+            $term_id = is_array($term) ? $term['term_id'] : $term;
+            $term_obj = get_term($term_id, 'tag_nota');
             return rest_ensure_response([
                 'id' => $term_id,
                 'name' => $term_obj ? $term_obj->name : $nome,
             ]);
         }
 
-        $inserita = wp_insert_term($nome, 'categoria_nota');
+        $inserita = wp_insert_term($nome, 'tag_nota');
         if (is_wp_error($inserita)) {
             return $inserita;
         }

@@ -8,19 +8,34 @@
             options.headers = Object.assign(
                 {
                     'Content-Type': 'application/json',
-                    'X-WP-Nonce': GN_Data.nonce,
+                    'X-WP-Nonce': typeof GN_Data !== 'undefined' && GN_Data.nonce ? GN_Data.nonce : '',
                 },
                 options.headers || {}
             );
 
-            return fetch(url, options).then(function (res) {
-                if (!res.ok) {
-                    return res.json().then(function (err) {
-                        throw new Error(err.message || 'Errore API');
-                    });
+            return fetch(url, options).then(async function (res) {
+                var rawText = await res.text();
+                var data = null;
+
+                if (rawText) {
+                    try {
+                        data = JSON.parse(rawText);
+                    } catch (e) {
+                        throw new Error(rawText.substring(0, 180) || 'Errore API');
+                    }
                 }
 
-                return res.json();
+                if (!res.ok) {
+                    var msg = 'Errore API';
+                    if (data && data.message) {
+                        msg = data.message;
+                    } else if (data && data.error) {
+                        msg = data.error;
+                    }
+                    throw new Error(msg);
+                }
+
+                return data;
             });
         }
     };

@@ -48,6 +48,12 @@ class Gestore_Note_Bacheca
             [],
             '2.5.0'
         );
+        wp_enqueue_style(
+            'gestore-note-chat-css',
+            $plugin_url . 'assets/css/chat.css',
+            [],
+            '2.5.0'
+        );
 
         wp_enqueue_script(
             'gestore-note-api',
@@ -72,6 +78,14 @@ class Gestore_Note_Bacheca
             true
         );
 
+        wp_enqueue_script(
+            'gestore-note-chat',
+            $plugin_url . 'assets/js/chat.js',
+            ['gestore-note-api'],
+            '3.0.3',
+            true
+        );
+
         $categorie = $this->get_categorie_per_js();
         $utenti_per_categoria = [];
         foreach ($categorie as $cat) {
@@ -87,11 +101,20 @@ class Gestore_Note_Bacheca
                 'nonce' => wp_create_nonce('wp_rest'),
                 'users' => $this->get_utenti_per_js(),
                 'usersByCategory' => $utenti_per_categoria,
+                'categories' => $categorie,
                 'tags' => $this->get_tag_per_js(),
                 'i18n' => [
                     'unassigned' => 'Nessuno',
                     'confirmDelete' => 'Eliminare questa nota?',
                 ],
+            ]
+        );
+
+        wp_localize_script(
+            'gestore-note-chat',
+            'GN_Chat_Live',
+            [
+                'chat_url' => esc_url_raw(rest_url('gestore-note/v1/chat')),
             ]
         );
     }
@@ -158,40 +181,21 @@ class Gestore_Note_Bacheca
 
             <div class="bacheca-header">
                 <h1>Task Manager</h1>
+                <div class="bacheca-header-actions">
+                    <button type="button" id="nota-aggiungi-nota-btn" class="button button-primary">
+                        + Nuova Nota
+                    </button>
+                    <button type="button" id="nota-aggiungi-categoria-btn" class="button button-secondary">
+                        + Nuova categoria
+                    </button>
+                    <button type="button" id="nota-modifica-categoria-btn" class="button button-secondary">
+                        Modifica categoria
+                    </button>
+                    <button type="button" id="nota-aggiungi-tag-btn" class="button button-secondary">
+                        + Nuova etichetta
+                    </button>
+                </div>
             </div>
-            <div class="bacheca-toolbar">
-                <input type="text" id="nota-nuovo-titolo" placeholder="Nuova nota...">
-
-                <select id="nota-nuova-categoria">
-                    <option value="">-- Categoria --</option>
-                    <?php foreach ($categorie as $cat): ?>
-                        <option value="<?php echo esc_attr($cat['id']); ?>"><?php echo esc_html($cat['name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-
-                <select id="nota-nuova-priorita" title="priorità">
-                    <option value="">Priorità</option>
-                    <option value="bassa">Bassa</option>
-                    <option value="media">Media</option>
-                    <option value="alta">Alta</option>
-                </select>
-                <input type="date" id="nota-nuova-scadenza">
-                <select id="nota-nuovo-assegnato">
-                    <option value="">-- Nessuno --</option>
-                    <?php foreach ($this->get_utenti_per_js() as $u): ?>
-                        <option value="<?php echo esc_attr($u['id']); ?>"><?php echo esc_html($u['name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <select id="nota-nuovo-tag">
-                    <option value="">-- Etichetta --</option>
-                    <?php foreach ($tags as $tag): ?>
-                        <option value="<?php echo esc_attr($tag['id']); ?>"><?php echo esc_html($tag['name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <input type="file" id="nota-nuovo-allegato" title="Allega file">
-                <button type="button" id="nota-aggiungi-btn" class="button button-primary">+ Aggiungi Nota</button>
-            </div>
-
             <div class="bacheca-filtri" style="margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                 <input type="text" id="filtro-ricerca" placeholder="Cerca tra le note..."
                     style="flex: 1 1 220px; padding: 4px 8px;">
@@ -270,6 +274,131 @@ class Gestore_Note_Bacheca
                 </div>
             </template>
 
+            <div id="gestore-note-categoria-modale" class="gestore-note-modale-overlay" style="display: none;"
+                data-action="create" data-category-id="">
+                <div class="gestore-note-modale-contenuto gestore-note-categoria-contenuto">
+                    <h2 id="modale-categoria-titolo">Nuova categoria</h2>
+
+                    <div class="gestore-note-campo">
+                        <label for="nuova-categoria-nome">Nome categoria</label>
+                        <input type="text" id="nuova-categoria-nome" placeholder="Es. Marketing, Supporto...">
+                    </div>
+
+                    <div class="gestore-note-campo">
+                        <label>Utenti abilitati</label>
+                        <div class="gn-utente-list-wrap">
+                            <label class="gn-utente-select-all">
+                                <input type="checkbox" id="nuova-categoria-seleziona-tutti">
+                                Seleziona tutti
+                            </label>
+                            <div id="nuova-categoria-utenti" class="gn-utente-list">
+                                <?php foreach ($this->get_utenti_per_js() as $u): ?>
+                                    <label class="gn-utente-item">
+                                        <input type="checkbox" value="<?php echo esc_attr($u['id']); ?>"
+                                            class="categoria-user-checkbox">
+                                        <?php echo esc_html($u['name']); ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <p class="description" style="margin-top: 6px;">Seleziona gli utenti che potranno essere assegnati a
+                            questa categoria.</p>
+                    </div>
+
+                    <div class="gestore-note-modale-azioni">
+                        <button type="button" id="modale-categoria-annulla" class="button">Annulla</button>
+                        <button type="button" id="modale-categoria-salva" class="button button-primary">Salva categoria</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="gestore-note-tag-modale" class="gestore-note-modale-overlay" style="display: none;">
+                <div class="gestore-note-modale-contenuto gestore-note-categoria-contenuto">
+                    <h2>Nuova etichetta</h2>
+
+                    <div class="gestore-note-campo">
+                        <label for="nuova-tag-nome">Nome etichetta</label>
+                        <input type="text" id="nuova-tag-nome" placeholder="Es. Urgente, Clienti...">
+                    </div>
+
+                    <div class="gestore-note-modale-azioni">
+                        <button type="button" id="modale-tag-annulla" class="button">Annulla</button>
+                        <button type="button" id="modale-tag-salva" class="button button-primary">Salva etichetta</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODALE DI CREAZIONE NOTA -->
+            <div id="gestore-note-modale-nota" class="gestore-note-modale-overlay" style="display: none;">
+                <div class="gestore-note-modale-contenuto gestore-note-nota-contenuto">
+                    <h2>Nuova Nota</h2>
+
+                    <div class="gestore-note-campo">
+                        <label for="modale-nota-titolo">Titolo</label>
+                        <input type="text" id="modale-nota-titolo" placeholder="Es. Completare progetto...">
+                    </div>
+
+                    <div class="gestore-note-riga-doppia">
+                        <div class="gestore-note-campo">
+                            <label for="modale-nota-categoria">Categoria</label>
+                            <select id="modale-nota-categoria">
+                                <option value="">-- Seleziona --</option>
+                                <?php foreach ($categorie as $cat): ?>
+                                    <option value="<?php echo esc_attr($cat['id']); ?>"><?php echo esc_html($cat['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="gestore-note-campo">
+                            <label for="modale-nota-priorita">Priorità</label>
+                            <select id="modale-nota-priorita">
+                                <option value="media" selected>Media</option>
+                                <option value="bassa">Bassa</option>
+                                <option value="alta">Alta</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="gestore-note-riga-doppia">
+                        <div class="gestore-note-campo">
+                            <label for="modale-nota-assegnato">Assegnato a</label>
+                            <select id="modale-nota-assegnato">
+                                <option value="">-- Nessuno --</option>
+                                <?php foreach ($this->get_utenti_per_js() as $u): ?>
+                                    <option value="<?php echo esc_attr($u['id']); ?>"><?php echo esc_html($u['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="gestore-note-campo">
+                            <label for="modale-nota-scadenza">Scadenza</label>
+                            <input type="date" id="modale-nota-scadenza">
+                        </div>
+                    </div>
+
+                    <div class="gestore-note-riga-doppia">
+                        <div class="gestore-note-campo">
+                            <label for="modale-nota-tag">Etichetta</label>
+                            <select id="modale-nota-tag">
+                                <option value="">-- Nessuna --</option>
+                                <?php foreach ($tags as $tag): ?>
+                                    <option value="<?php echo esc_attr($tag['id']); ?>"><?php echo esc_html($tag['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="gestore-note-campo">
+                            <label for="modale-nota-allegato">Allegato</label>
+                            <input type="file" id="modale-nota-allegato">
+                        </div>
+                    </div>
+
+                    <div class="gestore-note-modale-azioni">
+                        <button type="button" id="modale-nota-annulla" class="button">Annulla</button>
+                        <button type="button" id="modale-nota-salva" class="button button-primary">Crea Nota</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- MODALE DI MODIFICA NOTA -->
             <div id="gestore-note-modale" class="gestore-note-modale-overlay" style="display: none;">
                 <div class="gestore-note-modale-contenuto">
@@ -341,6 +470,25 @@ class Gestore_Note_Bacheca
                         <button type="button" id="modale-btn-annulla" class="button">Annulla</button>
                         <button type="button" id="modale-btn-salva" class="button button-primary">Salva modifiche</button>
                     </div>
+                </div>
+            </div>
+
+            <!-- BOX LIVE CHAT -->
+            <div id="gestore-note-chat-widget"
+                style="position: fixed; bottom: 20px; right: 20px; width: 58px; min-height: 58px; background: #2271b1; border: 1px solid #1d4f82; border-radius: 50px; box-shadow: 0 8px 20px rgba(0,0,0,0.18); z-index: 99999; display: flex; flex-direction: column; overflow: hidden; transition: all 0.2s ease;">
+                <button type="button" id="chat-toggle-btn"
+                    style="background: transparent; border: none; color: #fff; cursor: pointer; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 24px; padding: 0; line-height: 1;">
+                    💬
+                </button>
+                <div id="chat-messaggi-container"
+                    style="display: none; height: 200px; overflow-y: auto; padding: 10px; font-size: 12px; background: #f6f7f7; border-top: 1px solid #dcdfe4;">
+                </div>
+                <div
+                    style="display: none; padding: 8px; border-top: 1px solid #ddd; background: #fff; border-radius: 0 0 4px 4px;">
+                    <input type="text" id="chat-input-testo" placeholder="Scrivi un messaggio..."
+                        style="flex: 1; font-size: 11px; padding: 4px; height: 26px; width: 100%; box-sizing: border-box;">
+                    <button type="button" id="chat-invia-btn" class="button button-primary"
+                        style="font-size: 11px; height: 26px; line-height: 24px; padding: 0 8px; margin-left: 4px; margin-top: 6px;">Invia</button>
                 </div>
             </div>
 
