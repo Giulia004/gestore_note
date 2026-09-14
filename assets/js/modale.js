@@ -52,6 +52,36 @@
             });
         }
 
+        var selectCategoriaModal = document.getElementById('modale-categoria-seleziona');
+        if (selectCategoriaModal) {
+            selectCategoriaModal.addEventListener('change', function () {
+                var categoriaId = this.value;
+                var modale = document.getElementById('gestore-note-categoria-modale');
+                var input = document.getElementById('nuova-categoria-nome');
+                var utentiWrap = document.getElementById('nuova-categoria-utenti');
+                var checkboxes = utentiWrap ? utentiWrap.querySelectorAll('.categoria-user-checkbox') : [];
+                var selectedOption = this.options[this.selectedIndex];
+
+                modale && (modale.dataset.categoryId = categoriaId || '');
+                modale && (modale.dataset.action = categoriaId ? 'edit' : 'create');
+
+                if (!categoriaId || !selectedOption) {
+                    if (input) input.value = '';
+                    checkboxes.forEach(function (checkbox) { checkbox.checked = false; });
+                    return;
+                }
+
+                if (input) input.value = selectedOption.textContent.trim();
+
+                var utentiAbilitati = GN_Data && GN_Data.usersByCategory ? GN_Data.usersByCategory[categoriaId] || [] : [];
+                checkboxes.forEach(function (checkbox) {
+                    checkbox.checked = utentiAbilitati.some(function (id) {
+                        return String(id) === String(checkbox.value);
+                    });
+                });
+            });
+        }
+
         document.addEventListener('change', function (e) {
             if (e.target && e.target.classList && e.target.classList.contains('categoria-user-checkbox')) {
                 var wrapper = document.getElementById('nuova-categoria-utenti');
@@ -128,43 +158,27 @@
         var titolo = document.getElementById('modale-categoria-titolo');
         var btnSalva = document.getElementById('modale-categoria-salva');
         var checkAll = document.getElementById('nuova-categoria-seleziona-tutti');
-        if (!modale || !input || !utentiWrap || !titolo || !btnSalva || !checkAll) return;
+        var selectCategoriaInModal = document.getElementById('modale-categoria-seleziona');
+        if (!modale || !input || !utentiWrap || !titolo || !btnSalva || !checkAll || !selectCategoriaInModal) return;
 
         var azione = modalita === 'edit' ? 'edit' : 'create';
-        var categoriaId = document.getElementById('nota-nuova-categoria') ? document.getElementById('nota-nuova-categoria').value : '';
 
         modale.dataset.action = azione;
-        modale.dataset.categoryId = azione === 'edit' ? categoriaId : '';
+        modale.dataset.categoryId = '';
 
         titolo.textContent = azione === 'edit' ? 'Modifica categoria' : 'Nuova categoria';
         btnSalva.textContent = azione === 'edit' ? 'Salva modifiche' : 'Salva categoria';
 
         input.value = '';
+        selectCategoriaInModal.value = '';
         checkAll.checked = false;
         var checkboxes = utentiWrap.querySelectorAll('.categoria-user-checkbox');
         checkboxes.forEach(function (checkbox) { checkbox.checked = false; });
 
         if (azione === 'edit') {
-            if (!categoriaId) {
-                alert('Seleziona prima una categoria da modificare.');
-                return;
-            }
-
-            var categoriaSelezionata = Array.from(document.getElementById('nota-nuova-categoria').options).find(function (option) {
-                return String(option.value) === String(categoriaId);
-            });
-
-            if (categoriaSelezionata) {
-                input.value = categoriaSelezionata.textContent;
-            }
-
-            var utentiAbilitati = GN_Data && GN_Data.usersByCategory ? GN_Data.usersByCategory[categoriaId] || [] : [];
-            checkboxes.forEach(function (checkbox) {
-                checkbox.checked = utentiAbilitati.some(function (id) {
-                    return String(id) === String(checkbox.value);
-                });
-            });
-            checkAll.checked = checkboxes.length > 0 && Array.from(checkboxes).every(function (checkbox) { return checkbox.checked; });
+            // Il campo di selezione categoria è dentro il modale, quindi lascia aperta la possibilità
+            // di scegliere la categoria direttamente nel popup e non dal select esterno alla bacheca.
+            modale.dataset.categoryId = '';
         }
 
         modale.style.display = 'flex';

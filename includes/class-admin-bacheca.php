@@ -48,12 +48,6 @@ class Gestore_Note_Bacheca
             [],
             '2.5.0'
         );
-        wp_enqueue_style(
-            'gestore-note-chat-css',
-            $plugin_url . 'assets/css/chat.css',
-            [],
-            '2.5.0'
-        );
 
         wp_enqueue_script(
             'gestore-note-api',
@@ -78,14 +72,6 @@ class Gestore_Note_Bacheca
             true
         );
 
-        wp_enqueue_script(
-            'gestore-note-chat',
-            $plugin_url . 'assets/js/chat.js',
-            ['gestore-note-api'],
-            '3.0.3',
-            true
-        );
-
         $categorie = $this->get_categorie_per_js();
         $utenti_per_categoria = [];
         foreach ($categorie as $cat) {
@@ -103,6 +89,8 @@ class Gestore_Note_Bacheca
                 'usersByCategory' => $utenti_per_categoria,
                 'categories' => $categorie,
                 'tags' => $this->get_tag_per_js(),
+                'currentUser' => wp_get_current_user()->display_name,
+                'currentUserId' => get_current_user_id(),
                 'i18n' => [
                     'unassigned' => 'Nessuno',
                     'confirmDelete' => 'Eliminare questa nota?',
@@ -110,13 +98,7 @@ class Gestore_Note_Bacheca
             ]
         );
 
-        wp_localize_script(
-            'gestore-note-chat',
-            'GN_Chat_Live',
-            [
-                'chat_url' => esc_url_raw(rest_url('gestore-note/v1/chat')),
-            ]
-        );
+
     }
 
     private function get_utenti_per_js()
@@ -165,20 +147,6 @@ class Gestore_Note_Bacheca
         $categorie = $this->get_categorie_per_js();
         ?>
         <div class="wrap wrap-bacheca-note">
-            <!-- Pulsante per aprire la web app Angular -->
-            <div
-                style="margin: 15px 0 20px 0; background: #fff; padding: 15px; border-radius: 4px; border: 1px solid #c3c4c7; border-left: 4px solid #2271b1; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
-                <div>
-                    <h2 style="margin: 0 0 5px 0; font-size: 15px; color: #1d2327;">🚀 Dashboard Angular Moderna</h2>
-                    <p style="margin: 0; color: #646970; font-size: 13px;">Passa all'interfaccia interattiva per gestire le tue
-                        task in tempo reale.</p>
-                </div>
-                <a href="http://localhost:4200/board" target="_blank" class="button button-primary button-hero"
-                    style="font-size: 14px; height: 36px; line-height: 34px; padding: 0 16px;">
-                    Apri l'app &rarr;
-                </a>
-            </div>
-
             <div class="bacheca-header">
                 <h1>Task Manager</h1>
                 <div class="bacheca-header-actions">
@@ -278,6 +246,16 @@ class Gestore_Note_Bacheca
                 data-action="create" data-category-id="">
                 <div class="gestore-note-modale-contenuto gestore-note-categoria-contenuto">
                     <h2 id="modale-categoria-titolo">Nuova categoria</h2>
+
+                    <div class="gestore-note-campo">
+                        <label for="modale-categoria-seleziona">Seleziona categoria</label>
+                        <select id="modale-categoria-seleziona">
+                            <option value="">-- Seleziona categoria --</option>
+                            <?php foreach ($categorie as $cat): ?>
+                                <option value="<?php echo esc_attr($cat['id']); ?>"><?php echo esc_html($cat['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
                     <div class="gestore-note-campo">
                         <label for="nuova-categoria-nome">Nome categoria</label>
@@ -470,25 +448,6 @@ class Gestore_Note_Bacheca
                         <button type="button" id="modale-btn-annulla" class="button">Annulla</button>
                         <button type="button" id="modale-btn-salva" class="button button-primary">Salva modifiche</button>
                     </div>
-                </div>
-            </div>
-
-            <!-- BOX LIVE CHAT -->
-            <div id="gestore-note-chat-widget"
-                style="position: fixed; bottom: 20px; right: 20px; width: 58px; min-height: 58px; background: #2271b1; border: 1px solid #1d4f82; border-radius: 50px; box-shadow: 0 8px 20px rgba(0,0,0,0.18); z-index: 99999; display: flex; flex-direction: column; overflow: hidden; transition: all 0.2s ease;">
-                <button type="button" id="chat-toggle-btn"
-                    style="background: transparent; border: none; color: #fff; cursor: pointer; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 24px; padding: 0; line-height: 1;">
-                    💬
-                </button>
-                <div id="chat-messaggi-container"
-                    style="display: none; height: 200px; overflow-y: auto; padding: 10px; font-size: 12px; background: #f6f7f7; border-top: 1px solid #dcdfe4;">
-                </div>
-                <div
-                    style="display: none; padding: 8px; border-top: 1px solid #ddd; background: #fff; border-radius: 0 0 4px 4px;">
-                    <input type="text" id="chat-input-testo" placeholder="Scrivi un messaggio..."
-                        style="flex: 1; font-size: 11px; padding: 4px; height: 26px; width: 100%; box-sizing: border-box;">
-                    <button type="button" id="chat-invia-btn" class="button button-primary"
-                        style="font-size: 11px; height: 26px; line-height: 24px; padding: 0 8px; margin-left: 4px; margin-top: 6px;">Invia</button>
                 </div>
             </div>
 

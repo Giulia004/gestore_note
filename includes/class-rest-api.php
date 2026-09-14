@@ -364,7 +364,7 @@ class Gestore_Note_Rest_Api
         update_post_meta($post_id, '_nota_priorita', sanitize_key($request->get_param('priorita') ?: 'media'));
         update_post_meta($post_id, '_nota_scadenza', sanitize_text_field($request->get_param('scadenza')));
 
-        // Assegnazione manuale iniziale se passata esplicitamente
+        //Assegnazione dell'utente
         $assegnato_a = absint($request->get_param('assegnato_a'));
         $categoria_ids = array_filter(array_map('absint', (array) $request->get_param('categoria_nota')));
         $utenti_abilitati = $this->get_utenti_abilitati_per_categoria($categoria_ids);
@@ -504,7 +504,6 @@ class Gestore_Note_Rest_Api
         if (!is_array($commenti))
             $commenti = [];
 
-        // --- GESTIONE CORRETTA DELL'UTENTE ASSEGNATO ---
         $user_id = (int) get_post_meta($post->ID, '_nota_assegnato_a', true);
         $assegnato_data = null;
         if ($user_id) {
