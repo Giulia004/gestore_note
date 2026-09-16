@@ -148,7 +148,44 @@
             selectAssegnatoModale.value = String(nota.assegnato_a.id);
         }
 
+        // Popola i sottotask esistenti nella modale di modifica
+        var listaSottotask = document.getElementById('modale-lista-sottotask');
+        if (listaSottotask) {
+            listaSottotask.innerHTML = '';
+            var sottotaskArray = Array.isArray(nota.sottotask) ? nota.sottotask : [];
+            sottotaskArray.forEach(function (st) {
+                if (typeof window.GN_Sottotask !== 'undefined' && typeof window.GN_Sottotask.aggiungiUI === 'function') {
+                    window.GN_Sottotask.aggiungiUI(st.testo, st.completato);
+                }
+            });
+        }
+
+        // Popola lo Storico Attività (Log Audit Trail)
+        popolaStoricoLog(nota);
+
         modale.style.display = 'flex';
+    }
+
+    function popolaStoricoLog(nota) {
+        var logContainer = document.getElementById('modale-storico-log');
+        if (!logContainer) return;
+
+        logContainer.innerHTML = '';
+        var logs = Array.isArray(nota.log_attivita) ? nota.log_attivita : [];
+
+        if (logs.length === 0) {
+            logContainer.innerHTML = '<em style="font-size: 11px; color: #646970;">Nessuna attività registrata.</em>';
+            return;
+        }
+
+        logs.forEach(function (log) {
+            var item = document.createElement('div');
+            item.style.fontSize = '11px';
+            item.style.padding = '3px 0';
+            item.style.borderBottom = '1px solid #f0f0f1';
+            item.textContent = '🕒 ' + (log.data || '') + ' - ' + (log.azione || '');
+            logContainer.appendChild(item);
+        });
     }
 
     function apriModaleCategoria(modalita) {
@@ -176,8 +213,6 @@
         checkboxes.forEach(function (checkbox) { checkbox.checked = false; });
 
         if (azione === 'edit') {
-            // Il campo di selezione categoria è dentro il modale, quindi lascia aperta la possibilità
-            // di scegliere la categoria direttamente nel popup e non dal select esterno alla bacheca.
             modale.dataset.categoryId = '';
         }
 
@@ -351,6 +386,7 @@ function filtraUtentiPerCategoriaModale() {
         selectUtente.appendChild(option);
     });
 }
+
 function salvaModificaModale() {
     var id = document.getElementById('modale-nota-id').value;
     var titolo = document.getElementById('modale-nota-titolo').value.trim();
@@ -359,10 +395,22 @@ function salvaModificaModale() {
     var scadenza = document.getElementById('modale-nota-scadenza').value;
     var assegnato_a = document.getElementById('modale-nota-assegnato').value;
     var tagSelezionato = document.getElementById('modale-nota-tag').value;
-
     var categoriaSelezionata = document.getElementById('modale-nota-categoria') ? document.getElementById('modale-nota-categoria').value : '';
 
     if (!titolo) { alert("Il titolo non può essere vuoto."); return; }
+
+    var sottotaskList = [];
+    var items = document.querySelectorAll('#modale-lista-sottotask .gn-sottotask-item');
+    items.forEach(function (item) {
+        var span = item.querySelector('span');
+        var checkbox = item.querySelector('input[type="checkbox"]');
+        if (span) {
+            sottotaskList.push({
+                testo: span.textContent,
+                completato: checkbox ? checkbox.checked : false
+            });
+        }
+    });
 
     var payload = {
         titolo: titolo,
@@ -371,10 +419,13 @@ function salvaModificaModale() {
         scadenza: scadenza,
         assegnato_a: assegnato_a ? parseInt(assegnato_a, 10) : 0,
         tag_nota: tagSelezionato ? [parseInt(tagSelezionato, 10)] : [],
-        categoria_nota: categoriaSelezionata ? [parseInt(categoriaSelezionata, 10)] : []
+        categoria_nota: categoriaSelezionata ? [parseInt(categoriaSelezionata, 10)] : [],
+        sottotask: sottotaskList
     };
 
-    window.GN_API.fetch(API_URL + '/' + id, {
+    var apiUrl = typeof GN_Data !== 'undefined' ? GN_Data.restUrl + '/note' : '';
+
+    window.GN_API.fetch(apiUrl + '/' + id, {
         method: 'PUT',
         body: JSON.stringify(payload)
     }).then(function (notaAggiornata) {
@@ -427,6 +478,8 @@ function aggiungiNota() {
     var tagSelezionato = document.getElementById('modale-nota-tag') ? document.getElementById('modale-nota-tag').value : '';
     var categoriaSelezionata = document.getElementById('modale-nota-categoria') ? document.getElementById('modale-nota-categoria').value : '';
 
+    var apiUrl = typeof GN_Data !== 'undefined' ? GN_Data.restUrl + '/note' : '';
+
     var payload = {
         titolo: titolo,
         priorita: document.getElementById('modale-nota-priorita') ? document.getElementById('modale-nota-priorita').value : 'media',
@@ -436,14 +489,14 @@ function aggiungiNota() {
         categoria_nota: categoriaSelezionata ? [parseInt(categoriaSelezionata, 10)] : []
     };
 
-    window.GN_API.fetch(API_URL, {
+    window.GN_API.fetch(apiUrl, {
         method: 'POST',
         body: JSON.stringify(payload),
     }).then(function (nota) {
         if (fileToUpload && nota.id) {
             var formData = new FormData();
             formData.append('file', fileToUpload);
-            return fetch(API_URL + '/' + nota.id + '/allegato', {
+            return fetch(apiUrl + '/' + nota.id + '/allegato', {
                 method: 'POST',
                 headers: { 'X-WP-Nonce': GN_Data.nonce },
                 body: formData

@@ -106,7 +106,7 @@ class Gestore_Note_Rest_Api
                 'permission_callback' => [$this, 'controllo_permessi_singola_nota'],
             ],
             [
-                'methods' => 'DELETE, POST',
+                'methods' => ['DELETE', 'POST'],
                 'callback' => [$this, 'elimina_nota'],
                 'permission_callback' => [$this, 'controllo_permessi_singola_nota'],
             ],
@@ -331,7 +331,6 @@ class Gestore_Note_Rest_Api
             $cat_id = absint(is_array($categoria_ids) ? $categoria_ids[0] : $categoria_ids);
             wp_set_object_terms($post_id, [$cat_id], 'categoria_nota');
 
-            //Recupero dell'utente associato ai metadati della categoria
             $utente_categoria = get_term_meta($cat_id, '_categoria_utente_id', true);
             if ($utente_categoria) {
                 update_post_meta($post_id, '_nota_assegnato_a', absint($utente_categoria));
@@ -340,6 +339,26 @@ class Gestore_Note_Rest_Api
 
             return null;
         }
+    }
+
+    // Funzione di supporto per sanitizzare l'array dei sottotask in arrivo
+    private function sanitizza_sottotask($raw_sottotask)
+    {
+        $sottotask_sanitizzati = [];
+        if (is_array($raw_sottotask)) {
+            foreach ($raw_sottotask as $st) {
+                if (is_array($st) && isset($st['testo'])) {
+                    $testo = trim(sanitize_text_field($st['testo']));
+                    if (!empty($testo)) {
+                        $sottotask_sanitizzati[] = [
+                            'testo' => $testo,
+                            'completato' => !empty($st['completato']) ? true : false
+                        ];
+                    }
+                }
+            }
+        }
+        return $sottotask_sanitizzati;
     }
 
     public function crea_nota($request)
@@ -364,7 +383,10 @@ class Gestore_Note_Rest_Api
         update_post_meta($post_id, '_nota_priorita', sanitize_key($request->get_param('priorita') ?: 'media'));
         update_post_meta($post_id, '_nota_scadenza', sanitize_text_field($request->get_param('scadenza')));
 
-        //Assegnazione dell'utente
+        // Gestione dei sottotask
+        $sottotask = $this->sanitizza_sottotask($request->get_param('sottotask'));
+        update_post_meta($post_id, '_nota_sottotask', $sottotask);
+
         $assegnato_a = absint($request->get_param('assegnato_a'));
         $categoria_ids = array_filter(array_map('absint', (array) $request->get_param('categoria_nota')));
         $utenti_abilitati = $this->get_utenti_abilitati_per_categoria($categoria_ids);
@@ -375,14 +397,12 @@ class Gestore_Note_Rest_Api
             update_post_meta($post_id, '_nota_assegnato_a', $assegnato_a);
         }
 
-        // Gestione delle etichette (tag)
         $tag_ids = $request->get_param('tag_nota');
         if (!empty($tag_ids)) {
             $tag_ids = array_map('absint', (array) $tag_ids);
             wp_set_object_terms($post_id, $tag_ids, 'tag_nota');
         }
 
-        // Sovrascrive o imposta l'assegnatario in base alla categoria scelta
         $utente_da_categoria = $this->assegna_utente_da_categoria($post_id, $request);
         $assegnato_finale = $utente_da_categoria ? $utente_da_categoria : $assegnato_a;
 
@@ -416,6 +436,14 @@ class Gestore_Note_Rest_Api
             clean_post_cache($post_id);
         }
 
+        $contenuto = $request->get_param('contenuto');
+        if ($contenuto !== null) {
+            wp_update_post([
+                'ID' => $post_id,
+                'post_content' => sanitize_textarea_field($contenuto)
+            ]);
+        }
+
         $priorita = $request->get_param('priorita');
         if ($priorita !== null) {
             update_post_meta($post_id, '_nota_priorita', sanitize_key($priorita));
@@ -424,6 +452,13 @@ class Gestore_Note_Rest_Api
         $scadenza = $request->get_param('scadenza');
         if ($scadenza !== null) {
             update_post_meta($post_id, '_nota_scadenza', sanitize_text_field($scadenza));
+        }
+
+        // Aggiornamento dei sottotask se presenti nella richiesta
+        $sottotask_param = $request->get_param('sottotask');
+        if ($sottotask_param !== null) {
+            $sottotask = $this->sanitizza_sottotask($sottotask_param);
+            update_post_meta($post_id, '_nota_sottotask', $sottotask);
         }
 
         $assegnato_a = $request->get_param('assegnato_a');
@@ -443,7 +478,6 @@ class Gestore_Note_Rest_Api
             wp_set_object_terms($post_id, $tag_ids, 'tag_nota');
         }
 
-        // Applica l'eventuale categoria e sovrascrive l'assegnatario associato
         $this->assegna_utente_da_categoria($post_id, $request);
 
         if ($vecchio_assegnato) {
@@ -475,7 +509,6 @@ class Gestore_Note_Rest_Api
     {
         $allegato_id = get_post_meta($post->ID, '_nota_allegato_id', true);
 
-        // Recupera le etichette associate alla nota
         $termini = wp_get_post_terms($post->ID, 'tag_nota', ['fields' => 'all']);
         $tags = [];
         if (!is_wp_error($termini)) {
@@ -504,6 +537,11 @@ class Gestore_Note_Rest_Api
         if (!is_array($commenti))
             $commenti = [];
 
+        // Recupero dei sottotask salvati
+        $sottotask = get_post_meta($post->ID, '_nota_sottotask', true);
+        if (!is_array($sottotask))
+            $sottotask = [];
+
         $user_id = (int) get_post_meta($post->ID, '_nota_assegnato_a', true);
         $assegnato_data = null;
         if ($user_id) {
@@ -523,11 +561,12 @@ class Gestore_Note_Rest_Api
             'stato' => get_post_meta($post->ID, '_nota_stato', true) ?: 'todo',
             'priorita' => get_post_meta($post->ID, '_nota_priorita', true) ?: 'media',
             'scadenza' => get_post_meta($post->ID, '_nota_scadenza', true),
-            'assegnato_a' => $assegnato_data, // Restituisce l'oggetto {id, name} o null
+            'assegnato_a' => $assegnato_data,
             'allegato_url' => $allegato_id ? wp_get_attachment_url($allegato_id) : null,
             'categoria_nota' => $categorie_nota,
             'tag_nota' => $tags,
             'commenti' => $commenti,
+            'sottotask' => $sottotask, // <-- Includiamo l'array dei sottotask nella risposta API
             'edit_url' => get_edit_post_link($post->ID, 'raw'),
         ];
     }
@@ -564,7 +603,6 @@ class Gestore_Note_Rest_Api
                 ];
             }
         }
-
         return rest_ensure_response($out);
     }
 }

@@ -1,0 +1,119 @@
+.gn-sottotask-wrapper {
+    border: 1px solid var(--gn-border-strong, #c3c4c7);
+    border-radius: 6px;
+    padding: 12px;
+    background: #fcfcfc;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+#modale-lista-sottotask {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+.gn-sottotask-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #ffffff;
+    border-radius: 4px;
+    font-size: 13px;
+    border: 1px solid #dcdcde;
+    transition: all 0.15s ease;
+}
+
+.gn-sottotask-item:hover {
+    border-color: #8c8f94;
+}
+
+.gn-sottotask-item label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-weight: normal;
+    flex: 1;
+    cursor: pointer;
+    color: var(--gn-text, #1d2327);
+}
+
+.gn-sottotask-item input[type="checkbox"] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--gn-accent-doing, #2271b1);
+    cursor: pointer;
+}
+
+.gn-sottotask-item.completato {
+    background: #f6f7f7;
+    border-color: #e2e4e7;
+}
+
+.gn-sottotask-item.completato label span {
+    text-decoration: line-through;
+    color: var(--gn-text-muted, #8c8f94);
+}
+
+.gn-sottotask-elimina {
+    background: transparent;
+    border: none;
+    color: #a7aaad;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    line-height: 1;
+    border-radius: 3px;
+    transition: all 0.1s ease;
+}
+
+.gn-sottotask-elimina:hover {
+    color: #fff;
+    background-color: var(--gn-danger, #d63638);
+}
+
+/* --- ANTEPRIMA SOTTOTASK SULLA CARD DELLA BACHECA --- */
+.card-nota-sottotask-preview {
+    margin: 8px 0;
+    padding: 8px 10px;
+    background: #f8f9fa;
+    border: 1px solid #e2e4e7;
+    border-radius: 6px;
+    font-size: 11px;
+    display: none;
+    flex-direction: column;
+}
+
+.card-nota-sottotask-header {
+    font-weight: 600;
+    color: #50575e;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e4e7;
+    padding-bottom: 4px;
+}
+
+.card-nota-sottotask-item-preview {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    color: #3c434a;
+}
+
+.card-nota-sottotask-item-preview input[type="checkbox"] {
+    margin: 0;
+    accent-color: var(--gn-accent-doing, #2271b1);
+    cursor: default;
+}
+
+.card-nota-sottotask-item-preview span {
+    word-break: break-word;
+}
