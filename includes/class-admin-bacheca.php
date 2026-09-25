@@ -23,6 +23,7 @@ class Gestore_Note_Bacheca
 
     public function aggiungi_pagina_menu()
     {
+        // Sottomenu Bacheca Rapida
         add_submenu_page(
             'edit.php?post_type=wp_nota_interna',
             'Bacheca Rapida',
@@ -32,6 +33,19 @@ class Gestore_Note_Bacheca
             [$this, 'render_pagina_bacheca'],
             0
         );
+
+        // Sottomenu Chat Interna
+        $hook_chat = add_submenu_page(
+            'edit.php?post_type=wp_nota_interna',
+            'Chat Interna',
+            'Chat',
+            'edit_posts',
+            'gestore-note-chat',
+            [$this, 'render_pagina_chat']
+        );
+
+        // Carica gli asset dedicati esclusivamente alla pagina della chat
+        add_action('admin_print_scripts-' . $hook_chat, [$this, 'carica_assets_chat']);
     }
 
     public function carica_assets_bacheca($hook)
@@ -105,8 +119,68 @@ class Gestore_Note_Bacheca
                 ],
             ]
         );
+    }
 
+    public function carica_assets_chat()
+    {
+        $plugin_url = plugin_dir_url(dirname(__FILE__));
 
+        // Caricamento stile CSS della chat
+        wp_enqueue_style(
+            'gestore-note-chat-css',
+            $plugin_url . 'assets/css/chat.css',
+            [],
+            '1.0.0'
+        );
+
+        // Caricamento stile CSS delle notifiche
+        wp_enqueue_style(
+            'gestore-note-notifiche-css',
+            $plugin_url . 'assets/css/notifiche.css',
+            [],
+            '1.0.0'
+        );
+
+        // Caricamento script JS della chat
+        wp_enqueue_script(
+            'gestore-note-chat-js',
+            $plugin_url . 'assets/js/chat.js',
+            ['jquery'],
+            '1.0.0',
+            true
+        );
+
+        // Caricamento script JS separato per le notifiche in background
+        wp_enqueue_script(
+            'gestore-note-notifiche-js',
+            $plugin_url . 'assets/js/notifiche.js',
+            [],
+            '1.0.0',
+            true
+        );
+
+        // Localizzazione parametri REST, nonce e dati utente per la chat e le notifiche
+        wp_localize_script(
+            'gestore-note-chat-js',
+            'gestoreNoteChat',
+            [
+                'root' => esc_url_raw(rest_url('gestore-note/v1/chat')),
+                'nonce' => wp_create_nonce('wp_rest'),
+                'currentUserId' => get_current_user_id(),
+                'currentUserName' => wp_get_current_user()->display_name,
+            ]
+        );
+
+        wp_localize_script(
+            'gestore-note-notifiche-js',
+            'gestoreNoteChat',
+            [
+                'root' => esc_url_raw(rest_url('gestore-note/v1/chat')),
+                'nonce' => wp_create_nonce('wp_rest'),
+                'currentUserId' => get_current_user_id(),
+                'currentUserName' => wp_get_current_user()->display_name,
+            ]
+        );
     }
 
     private function get_utenti_per_js()
@@ -158,5 +232,13 @@ class Gestore_Note_Bacheca
 
         if (file_exists($template_path))
             include $template_path;
+    }
+
+    public function render_pagina_chat()
+    {
+        $template_path = plugin_dir_path(dirname(__FILE__)) . 'templates/chat-page.php';
+        if (file_exists($template_path)) {
+            include $template_path;
+        }
     }
 }

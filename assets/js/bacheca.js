@@ -178,7 +178,7 @@
         var nodo = tpl.content.firstElementChild.cloneNode(true);
         nodo.dataset.id = nota.id;
 
-        // 🏷️ TAGS / ETICHETTE
+        //Tags ed etichette
         var tagsEl = nodo.querySelector('.card-nota-tags');
         if (tagsEl && nota.tag_nota) {
             nota.tag_nota.forEach(function (tag) {
@@ -211,7 +211,7 @@
         popolaSottotaskCard(nodo, nota);
         formattaScadenzaCard(nodo, nota);
 
-        // 💬 COMMENTI
+        //Commenti
         var listaCommentiEl = nodo.querySelector('.card-nota-lista-commenti');
         if (listaCommentiEl && nota.commenti) {
             nota.commenti.forEach(function (c) {
@@ -247,7 +247,7 @@
             });
         }
 
-        // ⚡ PRIORITÀ E ASSEGNATO
+        //Priorità e assegnatario
         var prioritaEl = nodo.querySelector('.card-nota-priorita');
         if (prioritaEl && nota.priorita) {
             prioritaEl.textContent = nota.priorita.charAt(0).toUpperCase() + nota.priorita.slice(1);
@@ -264,7 +264,7 @@
             assegnatoEl.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:' + coloreBadge + '; margin-right:5px;"></span>Assegnato a: ' + nomeUtente;
         }
 
-        // 🔀 SPOSTAMENTO RAPIDO TRAMITE FRECCE
+        //Spostamento rapido mediante l'utilizzo delle frecce
         var spostaContainer = nodo.querySelector('.card-nota-spostamento-rapido');
         if (spostaContainer) {
             spostaContainer.innerHTML = '';

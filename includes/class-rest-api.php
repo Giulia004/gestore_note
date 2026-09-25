@@ -119,6 +119,18 @@ class Gestore_Note_Rest_Api
                 'permission_callback' => [$this, 'controllo_permessi_singola_nota']
             ],
         ]);
+        register_rest_route(self::NS, '/chat', [
+            [
+                'methods' => 'GET',
+                'callback' => [$this, 'get_messaggi_chat'],
+                'permission_callback' => [$this, 'controllo_permessi']
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [$this, 'send_messaggio_chat'],
+                'permission_callback' => [$this, 'controllo_permessi']
+            ],
+        ]);
     }
 
     public function carica_allegato($request)
@@ -605,4 +617,83 @@ class Gestore_Note_Rest_Api
         }
         return rest_ensure_response($out);
     }
+
+    public function get_messaggi_chat($request)
+    {
+        $args = [
+            'post_type' => 'wp_chat_messaggio',
+            'posts_per_page' => 50,
+            'orderby' => 'date',
+            'order' => 'ASC',
+            'post_status' => 'publish',
+        ];
+
+        $posts = get_posts($args);
+        $messages = [];
+
+        foreach ($posts as $post) {
+            $att_id = get_post_meta($post->ID, '_chat_attachment_id', true);
+            $att_url = $att_id ? wp_get_attachment_url($att_id) : '';
+            
+            $messages[] = [
+                'id' => $post->ID,
+                'author_id' => (int) $post->post_author,
+                'author' => get_the_author_meta('display_name', $post->post_author),
+                'text' => $post->post_content,
+                'date' => $post->post_date,
+                'attachment_url' => $att_url,
+            ];
+        }
+
+        return rest_ensure_response($messages);
+    }
+
+    public function send_messaggio_chat($request)
+    {
+        $testo = sanitize_text_field($request->get_param('testo'));
+        $current_user = wp_get_current_user();
+
+        $attachment_id = 0;
+        $attachment_url = '';
+
+        if (!empty($_FILES['file'])) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once(ABSPATH . 'wp-admin/includes/media.php');
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+
+            $attachment_id = media_handle_upload('file', 0);
+
+            if (is_wp_error($attachment_id))
+                return $attachment_id;
+
+            $attachment_url = wp_get_attachment_url($attachment_id);
+        }
+
+        if (empty($testo) && !$attachment_id)
+            return new WP_Error('messaggio vuoto', 'Il testo del messaggio non può essere vuoto');
+
+        $post_id = wp_insert_post([
+            'post_type' => 'wp_chat_messaggio',
+            'post_title' => 'Messaggio chat ' . current_time('mysql'),
+            'post_content' => $testo,
+            'post_status' => 'publish',
+            'post_author' => $current_user->ID,
+        ], true);
+
+        if (is_wp_error($post_id))
+            return $post_id;
+
+        if ($attachment_id)
+            update_post_meta($post_id, '_chat_attachment_id', $attachment_id);
+
+        return rest_ensure_response([
+            'success' => true,
+            'id' => $post_id,
+            'text' => $testo,
+            'author' => $current_user->display_name,
+            'date' => current_time('mysql'),
+            'attachment_url' => $attachment_url
+        ]);
+    }
+
 }
