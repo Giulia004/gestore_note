@@ -95,11 +95,7 @@ class Gestore_Note_Bacheca
         );
 
         $categorie = $this->get_categorie_per_js();
-        $utenti_per_categoria = [];
-        foreach ($categorie as $cat) {
-            $ids = get_term_meta($cat['id'], '_categoria_utenti', true);
-            $utenti_per_categoria[$cat['id']] = array_map('intval', (array) $ids);
-        }
+        $utenti_per_categoria = $this->get_utenti_per_categoria_js();
 
         wp_localize_script(
             'gestore-note-bacheca',
@@ -130,7 +126,7 @@ class Gestore_Note_Bacheca
             'gestore-note-chat-css',
             $plugin_url . 'assets/css/chat.css',
             [],
-            '1.0.0'
+            '1.2.0'
         );
 
         // Caricamento stile CSS delle notifiche
@@ -146,7 +142,7 @@ class Gestore_Note_Bacheca
             'gestore-note-chat-js',
             $plugin_url . 'assets/js/chat.js',
             ['jquery'],
-            '1.0.0',
+            '1.3.0',
             true
         );
 
@@ -168,6 +164,8 @@ class Gestore_Note_Bacheca
                 'nonce' => wp_create_nonce('wp_rest'),
                 'currentUserId' => get_current_user_id(),
                 'currentUserName' => wp_get_current_user()->display_name,
+                'users' => $this->get_utenti_per_js(),
+                'usersByCategory' => $this->get_utenti_per_categoria_js(),
             ]
         );
 
@@ -223,6 +221,16 @@ class Gestore_Note_Bacheca
         return $out;
     }
 
+    private function get_utenti_per_categoria_js()
+    {
+        $utenti_per_categoria = [];
+        foreach ($this->get_categorie_per_js() as $categoria) {
+            $ids = get_term_meta($categoria['id'], '_categoria_utenti', true);
+            $utenti_per_categoria[$categoria['id']] = array_map('intval', (array) $ids);
+        }
+        return $utenti_per_categoria;
+    }
+
     public function render_pagina_bacheca()
     {
         $tags = $this->get_tag_per_js();
@@ -236,6 +244,9 @@ class Gestore_Note_Bacheca
 
     public function render_pagina_chat()
     {
+        $tags = $this->get_tag_per_js();
+        $categorie = $this->get_categorie_per_js();
+        $utenti = $this->get_utenti_per_js();
         $template_path = plugin_dir_path(dirname(__FILE__)) . 'templates/chat-page.php';
         if (file_exists($template_path)) {
             include $template_path;

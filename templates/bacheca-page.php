@@ -28,6 +28,12 @@ $categorie = isset($categorie) ? $categorie : [];
             </div>
         </div>
         <div class="bacheca-header-actions">
+            <!-- 🌙 PULSANTE DARK MODE -->
+            <button type="button" id="gn-dark-mode-toggle" class="button button-secondary gn-theme-toggle"
+                title="Alterna tema chiaro/scuro">
+                🌙 Tema Scuro
+            </button>
+
             <button type="button" id="nota-aggiungi-nota-btn" class="button button-primary">
                 + Nuova Nota
             </button>

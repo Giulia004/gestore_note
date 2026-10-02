@@ -2,7 +2,9 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-$current_user = wp_get_current_user();
+$tags = isset($tags) ? $tags : [];
+$categorie = isset($categorie) ? $categorie : [];
+$utenti = isset($utenti) ? $utenti : [];
 ?>
 <div class="wrap wrap-gestore-note-chat">
     <div class="chat-page-header-bar">
@@ -53,7 +55,7 @@ $current_user = wp_get_current_user();
 
                 <div class="chat-input-wrapper" style="flex: 1;">
                     <input type="text" id="chat-input-text"
-                        placeholder="Scrivi un messaggio o usa @ per menzionare una nota..." autocomplete="off">
+                        placeholder="Messaggio, @nota o /task titolo..." autocomplete="off">
                 </div>
 
                 <button type="submit" class="button button-primary button-large"
@@ -68,4 +70,72 @@ $current_user = wp_get_current_user();
             </div>
         </form>
     </div>
+</div>
+
+<div id="chat-create-task-modal" class="chat-task-modal-overlay" style="display: none;">
+    <form id="chat-create-task-form" class="chat-task-modal">
+        <h2>Nuova task</h2>
+        <div class="chat-task-field">
+            <label for="chat-task-title">Titolo</label>
+            <input type="text" id="chat-task-title" required maxlength="200" autocomplete="off">
+        </div>
+        <div class="chat-task-field">
+            <label for="chat-task-content">Descrizione</label>
+            <textarea id="chat-task-content" rows="3"></textarea>
+        </div>
+        <div class="chat-task-fields-row">
+            <div class="chat-task-field">
+                <label for="chat-task-category">Categoria</label>
+                <select id="chat-task-category">
+                    <option value="">-- Nessuna --</option>
+                    <?php foreach ($categorie as $categoria): ?>
+                        <option value="<?php echo esc_attr($categoria['id']); ?>">
+                            <?php echo esc_html($categoria['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="chat-task-field">
+                <label for="chat-task-priority">Priorità</label>
+                <select id="chat-task-priority">
+                    <option value="media" selected>Media</option>
+                    <option value="bassa">Bassa</option>
+                    <option value="alta">Alta</option>
+                </select>
+            </div>
+        </div>
+        <div class="chat-task-fields-row">
+            <div class="chat-task-field">
+                <label for="chat-task-assignee">Assegnato a</label>
+                <select id="chat-task-assignee">
+                    <option value="">-- Nessuno --</option>
+                    <?php foreach ($utenti as $utente): ?>
+                        <option value="<?php echo esc_attr($utente['id']); ?>">
+                            <?php echo esc_html($utente['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="chat-task-field">
+                <label for="chat-task-due-date">Scadenza</label>
+                <input type="date" id="chat-task-due-date">
+            </div>
+        </div>
+        <div class="chat-task-field">
+            <label for="chat-task-tag">Etichetta</label>
+            <select id="chat-task-tag">
+                <option value="">-- Nessuna --</option>
+                <?php foreach ($tags as $tag): ?>
+                    <option value="<?php echo esc_attr($tag['id']); ?>">
+                        <?php echo esc_html($tag['name']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div id="chat-task-feedback" class="chat-task-feedback" role="status" aria-live="polite"></div>
+        <div class="chat-task-modal-actions">
+            <button type="button" id="chat-task-cancel" class="button">Annulla</button>
+            <button type="submit" id="chat-task-submit" class="button button-primary">Crea task</button>
+        </div>
+    </form>
 </div>

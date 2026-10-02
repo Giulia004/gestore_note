@@ -45,6 +45,46 @@ class Gestore_Note_Rest_Api
         return is_user_logged_in() && current_user_can('edit_post', $post_id);
     }
 
+    /**
+     * Restituisce il messaggio di chat indicato nella richiesta (o null se non esiste).
+     * 'wp_chat_messaggio' non è un post type registrato, quindi current_user_can('edit_post')
+     * non è utilizzabile: i permessi vengono controllati a mano.
+     */
+    private function get_messaggio_chat_da_richiesta($request)
+    {
+        $post = get_post(absint($request['id']));
+        if (!$post || $post->post_type !== 'wp_chat_messaggio' || $post->post_status !== 'publish') {
+            return null;
+        }
+        return $post;
+    }
+
+    // Modifica: solo l'autore del messaggio
+    public function controllo_permessi_modifica_messaggio_chat($request)
+    {
+        if (!$this->controllo_permessi()) {
+            return false;
+        }
+        $post = $this->get_messaggio_chat_da_richiesta($request);
+        if (!$post) {
+            return new WP_Error('messaggio_non_trovato', 'Messaggio non trovato.', ['status' => 404]);
+        }
+        return (int) $post->post_author === get_current_user_id();
+    }
+
+    // Eliminazione: l'autore del messaggio oppure un amministratore
+    public function controllo_permessi_elimina_messaggio_chat($request)
+    {
+        if (!$this->controllo_permessi()) {
+            return false;
+        }
+        $post = $this->get_messaggio_chat_da_richiesta($request);
+        if (!$post) {
+            return new WP_Error('messaggio_non_trovato', 'Messaggio non trovato.', ['status' => 404]);
+        }
+        return (int) $post->post_author === get_current_user_id() || current_user_can('manage_options');
+    }
+
     public function registra_rotte()
     {
         register_rest_route(self::NS, '/users', [
@@ -130,6 +170,20 @@ class Gestore_Note_Rest_Api
                 'callback' => [$this, 'send_messaggio_chat'],
                 'permission_callback' => [$this, 'controllo_permessi']
             ],
+        ]);
+
+        // Modifica ed eliminazione del singolo messaggio della chat
+        register_rest_route(self::NS, '/chat/(?P<id>\d+)', [
+            [
+                'methods' => ['PUT', 'PATCH'],
+                'callback' => [$this, 'modifica_messaggio_chat'],
+                'permission_callback' => [$this, 'controllo_permessi_modifica_messaggio_chat']
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [$this, 'elimina_messaggio_chat'],
+                'permission_callback' => [$this, 'controllo_permessi_elimina_messaggio_chat']
+            ]
         ]);
     }
 
@@ -630,11 +684,14 @@ class Gestore_Note_Rest_Api
 
         $posts = get_posts($args);
         $messages = [];
+        $utente_corrente = get_current_user_id();
+        $e_admin = current_user_can('manage_options');
 
         foreach ($posts as $post) {
             $att_id = get_post_meta($post->ID, '_chat_attachment_id', true);
             $att_url = $att_id ? wp_get_attachment_url($att_id) : '';
-            
+            $e_autore = (int) $post->post_author === $utente_corrente;
+
             $messages[] = [
                 'id' => $post->ID,
                 'author_id' => (int) $post->post_author,
@@ -642,6 +699,9 @@ class Gestore_Note_Rest_Api
                 'text' => $post->post_content,
                 'date' => $post->post_date,
                 'attachment_url' => $att_url,
+                'edited' => (bool) get_post_meta($post->ID, '_chat_modificato', true),
+                'can_edit' => $e_autore,
+                'can_delete' => $e_autore || $e_admin,
             ];
         }
 
@@ -694,6 +754,63 @@ class Gestore_Note_Rest_Api
             'date' => current_time('mysql'),
             'attachment_url' => $attachment_url
         ]);
+    }
+
+    public function modifica_messaggio_chat($request)
+    {
+        $post = $this->get_messaggio_chat_da_richiesta($request);
+        if (!$post) {
+            return new WP_Error('messaggio_non_trovato', 'Messaggio non trovato.', ['status' => 404]);
+        }
+
+        $testo = sanitize_text_field((string) $request->get_param('testo'));
+        $ha_allegato = (bool) get_post_meta($post->ID, '_chat_attachment_id', true);
+
+        if ($testo === '' && !$ha_allegato) {
+            return new WP_Error('messaggio_vuoto', 'Il testo del messaggio non può essere vuoto.', ['status' => 400]);
+        }
+
+        // Nessuna variazione: non segno il messaggio come modificato
+        if ($testo !== $post->post_content) {
+            $risultato = wp_update_post([
+                'ID' => $post->ID,
+                'post_content' => wp_slash($testo),
+            ], true);
+
+            if (is_wp_error($risultato)) {
+                return $risultato;
+            }
+
+            update_post_meta($post->ID, '_chat_modificato', current_time('mysql'));
+        }
+
+        return rest_ensure_response([
+            'success' => true,
+            'id' => $post->ID,
+            'text' => $testo,
+            'edited' => (bool) get_post_meta($post->ID, '_chat_modificato', true),
+        ]);
+    }
+
+    public function elimina_messaggio_chat($request)
+    {
+        $post = $this->get_messaggio_chat_da_richiesta($request);
+        if (!$post) {
+            return new WP_Error('messaggio_non_trovato', 'Messaggio non trovato.', ['status' => 404]);
+        }
+
+        $allegato_id = (int) get_post_meta($post->ID, '_chat_attachment_id', true);
+
+        if (!wp_delete_post($post->ID, true)) {
+            return new WP_Error('eliminazione_fallita', 'Impossibile eliminare il messaggio.', ['status' => 500]);
+        }
+
+        // L'allegato appartiene solo a questo messaggio: lo rimuovo anche dalla libreria media
+        if ($allegato_id && get_post_type($allegato_id) === 'attachment') {
+            wp_delete_attachment($allegato_id, true);
+        }
+
+        return rest_ensure_response(['success' => true, 'id' => $post->ID]);
     }
 
 }

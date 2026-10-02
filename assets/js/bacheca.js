@@ -8,6 +8,39 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         init();
+        document.body.classList.add('gn-bacheca-page');
+
+        // --- GESTIONE DARK MODE ---
+        var toggleBtn = document.getElementById('gn-dark-mode-toggle');
+        var htmlElement = document.documentElement;
+        var currentTheme = localStorage.getItem('gn_theme');
+
+        function aggiornaTestoTema() {
+            var isDark = htmlElement.getAttribute('data-theme') === 'dark';
+            toggleBtn.textContent = isDark ? '☀️ Tema Chiaro' : '🌙 Tema Scuro';
+            toggleBtn.title = isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro';
+        }
+
+        // Applica il tema salvato al caricamento
+        if (currentTheme === 'dark') {
+            htmlElement.setAttribute('data-theme', 'dark');
+        }
+
+        if (toggleBtn) {
+            aggiornaTestoTema();
+            toggleBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (htmlElement.getAttribute('data-theme') === 'dark') {
+                    htmlElement.removeAttribute('data-theme');
+                    localStorage.setItem('gn_theme', 'light');
+                } else {
+                    htmlElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('gn_theme', 'dark');
+                }
+                aggiornaTestoTema();
+            });
+        }
+        // --------------------------
 
         // Campanello dropdown notifiche
         var campanello = document.getElementById('bacheca-notifiche-scadenze');
@@ -256,7 +289,7 @@
         var assegnatoEl = nodo.querySelector('.card-nota-assegnato');
         if (assegnatoEl) {
             var nomeUtente = typeof GN_Data !== 'undefined' && GN_Data.i18n ? GN_Data.i18n.unassigned : 'Non assegnato';
-            var coloreBadge = '#787c82';
+            var coloreBadge = 'var(--gn-border-strong)';
             if (nota.assegnato_a) {
                 nomeUtente = nota.assegnato_a.name;
                 if (typeof coloreUtente === 'function') coloreBadge = coloreUtente(nota.assegnato_a.id);
@@ -366,12 +399,17 @@
             checkbox.checked = !!st.completato;
             var span = document.createElement('span');
             span.textContent = st.testo;
-            if (st.completato) { span.style.textDecoration = 'line-through'; span.style.color = '#8c8f94'; }
+
+            // Sostituzione dei colori fissi con le variabili per la dark mode
+            if (st.completato) {
+                span.style.textDecoration = 'line-through';
+                span.style.color = 'var(--gn-text-muted)';
+            }
 
             checkbox.addEventListener('change', function () {
                 st.completato = checkbox.checked;
                 span.style.textDecoration = checkbox.checked ? 'line-through' : 'none';
-                span.style.color = checkbox.checked ? '#8c8f94' : '#3c434a';
+                span.style.color = checkbox.checked ? 'var(--gn-text-muted)' : 'var(--gn-text)';
 
                 var nuotCompletati = nota.sottotask.filter(function (item) { return item.completato; }).length;
                 header.querySelector('span:last-child').textContent = nuotCompletati + '/' + nota.sottotask.length;
@@ -419,10 +457,20 @@
 
             if (diffGiorni < 0) {
                 nodo.classList.add('scaduta');
-                if (badgeScadenza) { badgeScadenza.style.backgroundColor = '#fcf0f0'; badgeScadenza.style.color = '#d63638'; badgeScadenza.textContent = '⚠️ Scaduta'; }
+                // Sostituzione dei colori hardcoded
+                if (badgeScadenza) {
+                    badgeScadenza.style.backgroundColor = 'var(--gn-danger-bg)';
+                    badgeScadenza.style.color = 'var(--gn-danger)';
+                    badgeScadenza.textContent = '⚠️ Scaduta';
+                }
             } else if (diffGiorni === 0) {
                 nodo.classList.add('in-scadenza-oggi');
-                if (badgeScadenza) { badgeScadenza.style.backgroundColor = '#fef8ee'; badgeScadenza.style.color = '#b98c0a'; badgeScadenza.textContent = '⏰ Scade oggi'; }
+                // Sostituzione dei colori hardcoded
+                if (badgeScadenza) {
+                    badgeScadenza.style.backgroundColor = 'var(--gn-accent-todo)';
+                    badgeScadenza.style.color = '#fff';
+                    badgeScadenza.textContent = '⏰ Scade oggi';
+                }
             } else if (badgeScadenza) {
                 badgeScadenza.style.display = 'none';
             }
@@ -470,7 +518,7 @@
                         tipo: 'scadenza',
                         nota: nota,
                         titolo: nota.titolo,
-                        testo: diffGiorni < 0 ? '⚠️ Scaduta da ' + Math.abs(diffGiorni) + ' giorni' : '⏰ Scade oggi',
+                        testo: diffGiorni < 0 ? '⚠️️ Scaduta da ' + Math.abs(diffGiorni) + ' giorni' : '⏰ Scade oggi',
                         classe: diffGiorni < 0 ? '' : 'oggi'
                     });
                 }

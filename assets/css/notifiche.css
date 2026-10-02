@@ -5,8 +5,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #fff;
-    border: 1px solid #ccd0d4;
+    background: var(--gn-surface, #fff);
+    border: 1px solid var(--gn-border, #ccd0d4);
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 14px;
@@ -14,6 +14,7 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     transition: all 0.2s ease;
     user-select: none;
+    color: var(--gn-text, #1d2327);
 }
 
 .gn-campanello-notifiche:hover {
@@ -36,8 +37,8 @@
     top: 40px;
     left: 0;
     width: 300px;
-    background: #fff;
-    border: 1px solid #ccd0d4;
+    background: var(--gn-surface, #fff);
+    border: 1px solid var(--gn-border, #ccd0d4);
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
@@ -45,12 +46,12 @@
 }
 
 .gn-notifiche-header {
-    background: #f6f7f7;
+    background: var(--gn-toolbar-bg, #f6f7f7);
     padding: 8px 12px;
     font-size: 12px;
     font-weight: 600;
-    color: #1d2327;
-    border-bottom: 1px solid #c3c4c7;
+    color: var(--gn-text, #1d2327);
+    border-bottom: 1px solid var(--gn-border, #c3c4c7);
 }
 
 .gn-notifiche-lista {
@@ -60,19 +61,19 @@
 
 .gn-notifiche-item {
     padding: 8px 12px;
-    border-bottom: 1px solid #f0f0f1;
+    border-bottom: 1px solid var(--gn-border, #f0f0f1);
     cursor: pointer;
     font-size: 12px;
     transition: background 0.15s ease;
 }
 
 .gn-notifiche-item:hover {
-    background: #f0f6fc;
+    background: var(--gn-dragover-bg, #f0f6fc);
 }
 
 .gn-notifiche-item-titolo {
     font-weight: 600;
-    color: #1d2327;
+    color: var(--gn-text, #1d2327);
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
@@ -95,7 +96,7 @@
 .gn-notifiche-vuoto {
     padding: 12px;
     text-align: center;
-    color: #646970;
+    color: var(--gn-text-muted, #646970);
     font-size: 12px;
 }
 
@@ -119,8 +120,8 @@
     font-size: 11px;
     padding: 2px 6px;
     border-radius: 4px;
-    background: #f0f0f1;
-    color: #3c434a;
+    background: var(--gn-bg, #f0f0f1);
+    color: var(--gn-text-soft, #3c434a);
 }
 
 /* Mirato esclusivamente al sottomenu della chat nel pannello WP */
@@ -182,6 +183,7 @@
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;

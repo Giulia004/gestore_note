@@ -1,7 +1,10 @@
 @import url(sottotask.css);
 @import url(notifiche.css);
 
-.wrap-bacheca-note {
+/* ==========================================
+   VARIABILI GLOBALI (LIGHT MODE)
+   ========================================== */
+:root {
     --gn-bg: #f3f4f6;
     --gn-surface: #ffffff;
     --gn-border: #dfe3e8;
@@ -17,8 +20,21 @@
     --gn-accent-tag: #7c4dff;
     --gn-accent-tag-bg: #f2ebff;
 
+    --gn-cat-text: #1d4ed8;
+    --gn-cat-bg: #e8f1ff;
+    --gn-cat-border: #bfdbfe;
+
     --gn-danger: #d63638;
     --gn-danger-bg: #fcf0f1;
+
+    /* Sfondi complessi e gradienti */
+    --gn-header-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(242, 246, 251, 0.9));
+    --gn-toolbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 249, 250, 0.95));
+    --gn-col-bg: linear-gradient(180deg, #f3f4f6 0%, #eef2f7 100%);
+    --gn-card-bg: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%);
+    --gn-modale-bg: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+    --gn-modale-overlay: rgba(17, 24, 39, 0.52);
+    --gn-dragover-bg: #e5f2ff;
 
     --gn-radius: 8px;
     --gn-radius-sm: 6px;
@@ -28,9 +44,85 @@
     --gn-space-3: 12px;
     --gn-space-4: 16px;
     --gn-space-5: 24px;
+}
 
-    margin-top: 20px;
+/* ==========================================
+   VARIABILI DARK MODE
+   ========================================== */
+[data-theme="dark"] {
+    --gn-bg: #15191c;
+    --gn-surface: #22292e;
+    --gn-border: #39434a;
+    --gn-border-strong: #56636c;
+    --gn-text: #edf1f3;
+    --gn-text-soft: #c0cbd1;
+    --gn-text-muted: #9aa8b0;
+
+    --gn-accent-todo: #e0b236;
+    --gn-accent-doing: #3a8ed9;
+    --gn-accent-done: #10c242;
+
+    --gn-accent-tag: #c4a7ff;
+    --gn-accent-tag-bg: #392c52;
+
+    --gn-cat-text: #9fc5ff;
+    --gn-cat-bg: #26394a;
+    --gn-cat-border: #3a5870;
+
+    --gn-danger: #e65052;
+    --gn-danger-bg: #482629;
+
+    /* Sfondi complessi per Dark Mode */
+    --gn-header-bg: linear-gradient(135deg, #22292e, #2a343a);
+    --gn-toolbar-bg: linear-gradient(180deg, #22292e, #252e33);
+    --gn-col-bg: linear-gradient(180deg, #1b2226 0%, #20292e 100%);
+    --gn-card-bg: linear-gradient(180deg, #2b353b 0%, #263036 100%);
+    --gn-modale-bg: linear-gradient(180deg, #252e33 0%, #20292e 100%);
+    --gn-modale-overlay: rgba(7, 12, 15, 0.78);
+    --gn-dragover-bg: #293f4c;
+}
+
+/* ==========================================
+   TRANSIZIONI GLOBALI
+   ========================================== */
+.wrap-bacheca-note,
+.wrap-bacheca-note *,
+.gestore-note-modale-contenuto {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+
+/* ==========================================
+   STILI COMPONENTI
+   ========================================== */
+.wrap-bacheca-note {
+    box-sizing: border-box;
+    min-height: calc(100vh - 32px);
+    margin: 0;
+    padding: 20px;
+    background: var(--gn-bg);
     color: var(--gn-text);
+}
+
+body.gn-bacheca-page #wpcontent {
+    min-height: 100vh;
+    background: var(--gn-bg);
+}
+
+body.gn-bacheca-page #wpbody-content,
+body.gn-bacheca-page #wpfooter {
+    background: transparent;
+}
+
+#wpbody-content .wrap-bacheca-note h1 {
+    color: var(--gn-text);
+}
+
+.wrap-bacheca-note {
+    color-scheme: light;
+}
+
+[data-theme="dark"] .wrap-bacheca-note {
+    color-scheme: dark;
 }
 
 .bacheca-header {
@@ -40,7 +132,7 @@
     gap: 16px;
     margin-bottom: 16px;
     padding: 14px 16px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(242, 246, 251, 0.9));
+    background: var(--gn-header-bg);
     border: 1px solid var(--gn-border);
     border-radius: var(--gn-radius);
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
@@ -64,7 +156,7 @@
     font-size: 13px;
     font-weight: 600;
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .bacheca-header-actions .button:hover,
@@ -72,6 +164,32 @@
 .bacheca-header-actions button:hover {
     transform: translateY(-1px);
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.08);
+}
+
+.bacheca-header-actions .gn-theme-toggle {
+    min-width: 124px;
+    border-color: var(--gn-border-strong);
+    background: var(--gn-surface);
+    color: var(--gn-text);
+}
+
+.bacheca-header-actions .gn-theme-toggle:hover,
+.bacheca-header-actions .gn-theme-toggle:focus-visible {
+    border-color: var(--gn-accent-doing);
+    color: var(--gn-accent-doing);
+}
+
+[data-theme="dark"] .bacheca-header-actions .gn-theme-toggle {
+    border-color: #61727c;
+    background: #303b42;
+    color: #f0c96a;
+}
+
+[data-theme="dark"] .bacheca-header-actions .gn-theme-toggle:hover,
+[data-theme="dark"] .bacheca-header-actions .gn-theme-toggle:focus-visible {
+    border-color: #f0c96a;
+    background: #39464e;
+    color: #ffe09a;
 }
 
 .bacheca-toolbar,
@@ -82,7 +200,7 @@
     align-items: center;
     margin: var(--gn-space-4) 0;
     padding: var(--gn-space-3) var(--gn-space-4);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 249, 250, 0.95));
+    background: var(--gn-toolbar-bg);
     border: 1px solid var(--gn-border);
     border-radius: var(--gn-radius);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
@@ -131,7 +249,7 @@
 
 .bacheca-colonna {
     position: relative;
-    background: linear-gradient(180deg, #f3f4f6 0%, #eef2f7 100%);
+    background: var(--gn-col-bg);
     border: 1px solid var(--gn-border);
     border-radius: var(--gn-radius);
     padding: var(--gn-space-3);
@@ -161,6 +279,7 @@
     margin: calc(var(--gn-space-3) * -1) calc(var(--gn-space-3) * -1) var(--gn-space-3);
     border-radius: var(--gn-radius) var(--gn-radius) 0 0;
     background: var(--gn-accent-todo);
+    z-index: 10;
 }
 
 .bacheca-colonna[data-stato="doing"]::before {
@@ -172,7 +291,7 @@
 }
 
 .bacheca-colonna.bacheca-dragover {
-    background: #e5f2ff;
+    background: var(--gn-dragover-bg);
     outline: 2px dashed var(--gn-accent-doing);
 }
 
@@ -213,10 +332,9 @@
 }
 
 .card-nota {
-    background: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%);
+    background: var(--gn-card-bg);
     padding: var(--gn-space-3);
     padding-bottom: 34px;
-    /* Spazio per i bottoni di spostamento rapido */
     border: 1px solid var(--gn-border);
     border-left: 4px solid var(--gn-accent-doing);
     border-radius: var(--gn-radius-sm);
@@ -266,9 +384,9 @@
 .card-nota-categoria {
     display: inline-block;
     margin-bottom: var(--gn-space-2);
-    background: #e8f1ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: var(--gn-cat-bg);
+    color: var(--gn-cat-text);
+    border: 1px solid var(--gn-cat-border);
     border-radius: 999px;
     padding: 3px 9px;
     font-size: 11px;
@@ -286,14 +404,14 @@
 
 .card-nota-contenuto {
     font-size: 13px;
-    color: #555;
+    color: var(--gn-text-soft);
     margin-bottom: var(--gn-space-2);
     white-space: pre-line;
 }
 
 .card-nota-footer {
     font-size: 12px;
-    border-top: 1px solid var(--gn-bg);
+    border-top: 1px solid var(--gn-border);
     padding-top: var(--gn-space-2);
     display: flex;
     justify-content: space-between;
@@ -301,7 +419,7 @@
 }
 
 .card-nota-priorita {
-    background: var(--gn-bg);
+    background: var(--gn-surface);
     padding: 2px 7px;
     border-radius: 3px;
 }
@@ -314,20 +432,20 @@
 
 /* Bottoni rapidi di spostamento card */
 .card-sposta-btn {
-    background: #f0f0f1;
-    border: 1px solid #c3c4c7;
+    background: var(--gn-surface);
+    border: 1px solid var(--gn-border-strong);
     border-radius: 3px;
     padding: 2px 8px;
     font-size: 11px;
     cursor: pointer;
-    color: #3c434a;
+    color: var(--gn-text);
     font-weight: bold;
     transition: background 0.15s ease;
 }
 
 .card-sposta-btn:hover {
-    background: #e2e4e7;
-    color: #1d2327;
+    background: var(--gn-border);
+    color: var(--gn-text);
 }
 
 .card-nota-elimina,
@@ -344,7 +462,7 @@
 
 .card-nota-elimina {
     right: 6px;
-    color: #a7aaad;
+    color: var(--gn-border-strong);
     font-size: 16px;
 }
 
@@ -355,23 +473,23 @@
 
 .card-nota-modifica {
     right: 32px;
-    color: #a7aaad;
+    color: var(--gn-border-strong);
     font-size: 14px;
 }
 
 .card-nota-modifica:hover {
     color: var(--gn-accent-doing);
-    background: #e5f2ff;
+    background: var(--gn-dragover-bg);
 }
 
 /* Evidenziazione Scadenze */
 .card-nota.scaduta {
-    border-color: #d63638 !important;
+    border-color: var(--gn-danger) !important;
     box-shadow: 0 1px 3px rgba(214, 54, 56, 0.15);
 }
 
 .card-nota.in-scadenza-oggi {
-    border-color: #dba617 !important;
+    border-color: var(--gn-accent-todo) !important;
     box-shadow: 0 1px 3px rgba(219, 166, 23, 0.15);
 }
 
@@ -379,7 +497,7 @@
 .gestore-note-modale-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(17, 24, 39, 0.52);
+    background: var(--gn-modale-overlay);
     backdrop-filter: blur(2px);
     z-index: 100000;
     display: flex;
@@ -389,7 +507,7 @@
 }
 
 .gestore-note-modale-contenuto {
-    background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+    background: var(--gn-modale-bg);
     padding: 24px;
     border-radius: 12px;
     width: 470px;
@@ -397,7 +515,16 @@
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
-    border: 1px solid rgba(30, 41, 59, 0.08);
+    border: 1px solid var(--gn-border);
+}
+
+#wpbody-content .gestore-note-modale-contenuto h2 {
+    margin: 0 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--gn-border);
+    color: var(--gn-text);
+    font-size: 20px;
+    line-height: 1.3;
 }
 
 .gestore-note-campo {
@@ -409,6 +536,7 @@
     font-weight: 600;
     margin-bottom: 7px;
     font-size: 13px;
+    color: var(--gn-text);
 }
 
 .gestore-note-campo input[type="text"],
@@ -417,10 +545,11 @@
 .gestore-note-campo select {
     width: 100%;
     padding: 9px 10px;
-    border: 1px solid var(--gn-border-strong, #8c8f94);
+    border: 1px solid var(--gn-border-strong);
     border-radius: 4px;
     font-size: 13px;
-    background: #fff;
+    background: var(--gn-surface);
+    color: var(--gn-text);
     box-sizing: border-box;
 }
 
@@ -441,5 +570,5 @@
     gap: 10px;
     margin-top: 18px;
     padding-top: 12px;
-    border-top: 1px solid var(--gn-border, #ddd);
+    border-top: 1px solid var(--gn-border);
 }
