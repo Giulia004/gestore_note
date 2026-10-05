@@ -110,6 +110,14 @@ $categorie = isset($categorie) ? $categorie : [];
         </div>
     </div>
 
+    <div id="bacheca-sezione-scadute" class="bacheca-sezione-scadute">
+        <div class="bacheca-sezione-header">
+            <h2>Task scadute</h2>
+            <span id="bacheca-scadute-conteggio" class="bacheca-scadute-conteggio">0</span>
+        </div>
+        <div id="bacheca-scadute-lista" class="bacheca-scadute-lista"></div>
+    </div>
+
     <template id="template-card-nota">
         <div class="card-nota" draggable="true">
             <!-- ⚠️ BADGE NOTIFICA SCADENZA SULLA CARD -->

@@ -247,6 +247,82 @@ body.gn-bacheca-page #wpfooter {
     margin-top: 10px;
 }
 
+.bacheca-sezione-scadute {
+    margin-top: 24px;
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(214, 54, 56, 0.08), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(214, 54, 56, 0.28);
+    border-radius: var(--gn-radius);
+    box-shadow: 0 3px 12px rgba(214, 54, 56, 0.08);
+}
+
+.bacheca-sezione-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.bacheca-sezione-header h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--gn-text);
+    letter-spacing: 0.02em;
+}
+
+.bacheca-scadute-conteggio {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--gn-danger-bg);
+    color: var(--gn-danger);
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(214, 54, 56, 0.25);
+}
+
+.bacheca-scadute-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bacheca-scaduta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    background: var(--gn-surface);
+    border: 1px solid rgba(214, 54, 56, 0.2);
+    border-left: 4px solid var(--gn-danger);
+    border-radius: var(--gn-radius-sm);
+}
+
+.bacheca-scaduta-item strong {
+    font-size: 13px;
+    color: var(--gn-text);
+}
+
+.bacheca-scaduta-meta {
+    font-size: 12px;
+    color: var(--gn-danger);
+    font-weight: 600;
+}
+
+.bacheca-scaduta-vuota {
+    padding: 14px;
+    text-align: center;
+    color: var(--gn-text-soft);
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px dashed var(--gn-border-strong);
+    border-radius: var(--gn-radius-sm);
+}
+
 .bacheca-colonna {
     position: relative;
     background: var(--gn-col-bg);

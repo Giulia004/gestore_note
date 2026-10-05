@@ -171,7 +171,70 @@
             if (conteggioEl) conteggioEl.textContent = filtrate.length;
         });
 
+        aggiornaSezioneScadute();
         aggiornaNotificheScadenze();
+    }
+
+    function getTaskScadute() {
+        var oggi = new Date();
+        oggi.setHours(0, 0, 0, 0);
+
+        return window.noteCache.filter(function (nota) {
+            if (!nota.scadenza || nota.stato === 'done') return false;
+
+            var dataScadenza = new Date(nota.scadenza + 'T00:00:00');
+            dataScadenza.setHours(0, 0, 0, 0);
+
+            return dataScadenza.getTime() < oggi.getTime();
+        }).sort(function (a, b) {
+            return new Date(a.scadenza) - new Date(b.scadenza);
+        });
+    }
+
+    function aggiornaSezioneScadute() {
+        var listaContainer = document.getElementById('bacheca-scadute-lista');
+        var badgeConteggio = document.getElementById('bacheca-scadute-conteggio');
+        if (!listaContainer || !badgeConteggio) return;
+
+        var scadute = getTaskScadute();
+        badgeConteggio.textContent = scadute.length;
+
+        listaContainer.innerHTML = '';
+
+        if (scadute.length === 0) {
+            listaContainer.innerHTML = '<div class="bacheca-scaduta-vuota">Nessuna task scaduta</div>';
+            return;
+        }
+
+        scadute.forEach(function (nota) {
+            var item = document.createElement('div');
+            item.className = 'bacheca-scaduta-item';
+
+            var titolo = document.createElement('strong');
+            titolo.textContent = nota.titolo || 'Nota senza titolo';
+
+            var meta = document.createElement('div');
+            meta.className = 'bacheca-scaduta-meta';
+            meta.textContent = 'Scaduta da ' + formattaData(nota.scadenza);
+
+            var azione = document.createElement('button');
+            azione.type = 'button';
+            azione.className = 'button button-secondary';
+            azione.style.fontSize = '12px';
+            azione.style.padding = '4px 10px';
+            azione.style.width = 'fit-content';
+            azione.textContent = 'Apri task';
+            azione.addEventListener('click', function () {
+                if (typeof window.GN_Modale !== 'undefined' && typeof window.GN_Modale.apri === 'function') {
+                    window.GN_Modale.apri(nota);
+                }
+            });
+
+            item.appendChild(titolo);
+            item.appendChild(meta);
+            item.appendChild(azione);
+            listaContainer.appendChild(item);
+        });
     }
 
     function inizializzaDragAndDropColonne() {
