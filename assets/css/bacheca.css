@@ -525,7 +525,8 @@ body.gn-bacheca-page #wpfooter {
 }
 
 .card-nota-elimina,
-.card-nota-modifica {
+.card-nota-modifica,
+.card-nota-clona {
     position: absolute;
     top: 6px;
     background: transparent;
@@ -553,7 +554,18 @@ body.gn-bacheca-page #wpfooter {
     font-size: 14px;
 }
 
+.card-nota-clona {
+    right: 58px;
+    color: var(--gn-border-strong);
+    font-size: 14px;
+}
+
 .card-nota-modifica:hover {
+    color: var(--gn-accent-doing);
+    background: var(--gn-dragover-bg);
+}
+
+.card-nota-clona:hover {
     color: var(--gn-accent-doing);
     background: var(--gn-dragover-bg);
 }

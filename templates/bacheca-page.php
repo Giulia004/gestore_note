@@ -152,6 +152,7 @@ $categorie = isset($categorie) ? $categorie : [];
             <div class="card-nota-spostamento-rapido"
                 style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px;"></div>
 
+            <button type="button" class="card-nota-clona" title="Clona task" aria-label="Clona task">⧉</button>
             <button type="button" class="card-nota-modifica" title="Modifica">✏️</button>
             <button type="button" class="card-nota-elimina" title="Elimina">&times;</button>
         </div>

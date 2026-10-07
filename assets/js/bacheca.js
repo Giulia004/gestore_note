@@ -99,6 +99,8 @@
         var filtroCategoria = document.getElementById('filtro-categoria') ? document.getElementById('filtro-categoria').value : '';
         var filtroTag = document.getElementById('filtro-tag') ? document.getElementById('filtro-tag').value : '';
         var filtroOrdine = document.getElementById('filtro-ordinamento') ? document.getElementById('filtro-ordinamento').value : '';
+        var oggi = new Date();
+        oggi.setHours(0, 0, 0, 0);
 
         STATI.forEach(function (stato) {
             var contenitore = document.querySelector('.bacheca-colonna-note[data-stato="' + stato + '"]');
@@ -108,7 +110,7 @@
 
             // 1. Filtraggio combinato per stato e per tutti i criteri selezionati
             var filtrate = window.noteCache.filter(function (n) {
-                if (n.stato !== stato) return false;
+                if (n.stato !== stato || isNotaScaduta(n, oggi)) return false;
 
                 // Ricerca testuale
                 if (testoRicerca) {
@@ -180,15 +182,20 @@
         oggi.setHours(0, 0, 0, 0);
 
         return window.noteCache.filter(function (nota) {
-            if (!nota.scadenza || nota.stato === 'done') return false;
-
-            var dataScadenza = new Date(nota.scadenza + 'T00:00:00');
-            dataScadenza.setHours(0, 0, 0, 0);
-
-            return dataScadenza.getTime() < oggi.getTime();
+            return isNotaScaduta(nota, oggi);
         }).sort(function (a, b) {
             return new Date(a.scadenza) - new Date(b.scadenza);
         });
+    }
+
+    function isNotaScaduta(nota, oggi) {
+        if (!nota.scadenza || nota.stato === 'done') return false;
+
+        var dataScadenza = new Date(nota.scadenza + 'T00:00:00');
+        if (Number.isNaN(dataScadenza.getTime())) return false;
+        dataScadenza.setHours(0, 0, 0, 0);
+
+        return dataScadenza.getTime() < oggi.getTime();
     }
 
     function aggiornaSezioneScadute() {
@@ -404,6 +411,14 @@
             });
         }
 
+        var btnClona = nodo.querySelector('.card-nota-clona');
+        if (btnClona) {
+            btnClona.addEventListener('click', function (e) {
+                e.stopPropagation();
+                clonaNota(nota);
+            });
+        }
+
         var btnElimina = nodo.querySelector('.card-nota-elimina');
         if (btnElimina) {
             btnElimina.addEventListener('click', function (e) {
@@ -425,6 +440,46 @@
         nodo.addEventListener('dragend', function () { nodo.classList.remove('card-nota-dragging'); });
 
         return nodo;
+    }
+
+    function clonaNota(nota) {
+        var payload = {
+            titolo: (nota.titolo || '') + ' (copia)',
+            contenuto: nota.contenuto || '',
+            priorita: nota.priorita || 'media',
+            scadenza: nota.scadenza || '',
+            assegnato_a: nota.assegnato_a ? Number(nota.assegnato_a.id) : 0,
+            tag_nota: Array.isArray(nota.tag_nota) ? nota.tag_nota.map(function (tag) {
+                return Number(tag.id);
+            }) : [],
+            categoria_nota: Array.isArray(nota.categoria_nota) ? nota.categoria_nota.map(function (categoria) {
+                return Number(categoria.id);
+            }) : [],
+            sottotask: Array.isArray(nota.sottotask) ? nota.sottotask.map(function (sottotask) {
+                return { testo: sottotask.testo, completato: false };
+            }) : []
+        };
+
+        window.GN_API.fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        }).then(function (notaClonata) {
+            var idClonato = notaClonata && String(notaClonata.id);
+            var idValido = idClonato && /^[1-9]\d*$/.test(idClonato);
+            var idGiaPresente = idValido && window.noteCache.some(function (notaEsistente) {
+                return String(notaEsistente.id) === idClonato;
+            });
+
+            if (!idValido || idGiaPresente) {
+                caricaNote();
+                throw new Error('Il server non ha restituito un ID nuovo e valido per la task clonata.');
+            }
+
+            window.noteCache.unshift(notaClonata);
+            disegnaBoard();
+        }).catch(function (err) {
+            alert('Errore durante la clonazione: ' + err.message);
+        });
     }
 
     function cambiaStatoNota(nota, nuovoStato) {

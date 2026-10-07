@@ -60,7 +60,7 @@ class Gestore_Note_Bacheca
             'gestore-note-bacheca-css',
             $plugin_url . 'assets/css/bacheca.css',
             [],
-            '2.5.0'
+            '2.5.1'
         );
 
         wp_enqueue_script(
@@ -75,7 +75,7 @@ class Gestore_Note_Bacheca
             'gestore-note-bacheca',
             $plugin_url . 'assets/js/bacheca.js',
             ['gestore-note-api'],
-            '3.0.3',
+            '3.0.5',
             true
         );
         wp_enqueue_script(
